@@ -8,13 +8,13 @@ export class ContentItemDto {
     title: string | null;
 
     @ApiPropertyOptional({ description: 'Исполнитель', example: 'Artist Name', nullable: true })
-    songer: string | null;
+    artist: string | null;
 
     @ApiPropertyOptional({ description: 'Путь к аудиофайлу', example: '/audio/track.mp3', nullable: true })
-    audioFilePath: string | null;
+    file: string | null;
 
     @ApiPropertyOptional({ description: 'Путь к обложке', example: '/covers/track.jpg', nullable: true })
-    coverFilePath: string | null;
+    cover: string | null;
 }
 
 export class ArtistItemDto {
@@ -22,10 +22,10 @@ export class ArtistItemDto {
     songer: string | null;
 
     @ApiPropertyOptional({ description: 'Путь к обложке исполнителя', example: '/covers/artist.jpg', nullable: true })
-    coverFilePath: string | null;
+    cover: string | null;
 
     @ApiProperty({ description: 'Количество треков исполнителя', example: 12 })
-    contentCount: number;
+    tracks: number;
 }
 
 export class PlaylistWithCoversItemDto {
@@ -39,10 +39,10 @@ export class PlaylistWithCoversItemDto {
     description: string | null;
 
     @ApiProperty({ description: 'Количество треков в плейлисте', example: 25 })
-    contentCount: number;
+    tracks: number;
 
     @ApiProperty({ description: 'Случайные обложки треков плейлиста', type: [String], nullable: true, example: ['/covers/1.jpg', '/covers/2.jpg'] })
-    randomCovers: (string | null)[];
+    covers: (string | null)[];
 }
 
 export class CategoryItemDto {
@@ -55,10 +55,10 @@ export class CategoryItemDto {
 
 export class CategoryInfoItemDto {
     @ApiPropertyOptional({ description: 'Название категории', example: 'Pop', nullable: true })
-    categoryName: string | null;
+    caption: string | null;
 
     @ApiProperty({ description: 'Количество уникальных исполнителей в категории', example: 42 })
-    totalRows: number;
+    count: number;
 }
 
 export class AuthCodeResponseDto {

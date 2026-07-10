@@ -1,15 +1,15 @@
 export interface ContentItem {
     id: number;
     title: string | null;
-    songer: string | null;
-    audioFilePath: string | null;
-    coverFilePath: string | null;
+    artist: string | null;
+    file: string | null;
+    cover: string | null;
 }
 
 export interface ArtistItem {
     songer: string | null;
-    coverFilePath: string | null;
-    contentCount: number;
+    cover: string | null;
+    tracks: number;
 }
 
 export interface PlaylistItem {
@@ -24,8 +24,8 @@ export interface PlaylistWithCoversItem {
     id: number;
     title: string | null;
     description: string | null;
-    contentCount: number;
-    randomCovers: (string | null)[];
+    tracks: number;
+    covers: (string | null)[];
 }
 
 export interface CategoryItem {
@@ -34,8 +34,8 @@ export interface CategoryItem {
 }
 
 export interface CategoryInfoItem {
-    categoryName: string | null;
-    totalRows: number;
+    caption: string | null;
+    count: number;
 }
 
 export function mapContentRowToNewsItem(row: {
@@ -48,17 +48,17 @@ export function mapContentRowToNewsItem(row: {
     return {
         id: row.id,
         title: row.title,
-        songer: row.songer,
-        audioFilePath: row.audio_file_path,
-        coverFilePath: row.cover_file_path,
+        artist: row.songer,
+        file: row.audio_file_path,
+        cover: row.cover_file_path,
     };
 }
 
 export function mapArtistsRowToNewsItem(row: { songer: string | null; cover_file_path: string | null; contentCount: string | number }): ArtistItem {
     return {
         songer: row.songer,
-        coverFilePath: row.cover_file_path,
-        contentCount: Number(row.contentCount),
+        cover: row.cover_file_path,
+        tracks: Number(row.contentCount),
     };
 }
 
@@ -89,8 +89,8 @@ export function mapPlaylistWithCoversRowToNewsItem(row: {
         id: row.id,
         title: row.title,
         description: row.description,
-        contentCount: Number(row.content_count),
-        randomCovers: row.random_covers ?? [],
+        tracks: Number(row.content_count),
+        covers: row.random_covers ?? [],
     };
 }
 
@@ -103,7 +103,7 @@ export function mapCategoriesRowToItems(row: { id: number; caption: string | nul
 
 export function mapCategoryInfoRowToItems(row: { category_name: string | null; total_rows: string | number }): CategoryInfoItem {
     return {
-        categoryName: row.category_name,
-        totalRows: Number(row.total_rows),
+        caption: row.category_name,
+        count: Number(row.total_rows),
     };
 }

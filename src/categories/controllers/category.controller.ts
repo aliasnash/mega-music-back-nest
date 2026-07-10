@@ -5,18 +5,18 @@ import { ArtistItemDto, CategoryInfoItemDto, CategoryItemDto } from '../../commo
 import { ArtistItem, CategoryInfoItem, CategoryItem } from '../../common/mappers/content.mapper';
 
 @ApiTags('Category')
-@Controller('category')
+@Controller()
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 
-    @Get('list')
+    @Get('categories')
     @ApiOperation({ summary: 'Список категорий', description: 'Возвращает все категории, отсортированные по полю sortBy.' })
     @ApiResponse({ status: 200, description: 'Список категорий', type: [CategoryItemDto] })
     categoryList(): Promise<CategoryItem[]> {
         return this.categoryService.categoryList();
     }
 
-    @Get('info')
+    @Get('category/info')
     @ApiOperation({ summary: 'Информация о категории', description: 'Возвращает название категории и количество уникальных исполнителей в ней.' })
     @ApiQuery({ name: 'id', required: true, type: Number, description: 'Идентификатор категории', example: 1 })
     @ApiResponse({ status: 200, description: 'Информация о категории', type: CategoryInfoItemDto })
@@ -24,7 +24,7 @@ export class CategoryController {
         return this.categoryService.categoryInfo(Number(id));
     }
 
-    @Get()
+    @Get('category')
     @ApiOperation({ summary: 'Исполнители категории', description: 'Возвращает исполнителей указанной категории с пагинацией.' })
     @ApiQuery({ name: 'id', required: true, type: Number, description: 'Идентификатор категории', example: 1 })
     @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Максимальное количество исполнителей', example: 10 })
