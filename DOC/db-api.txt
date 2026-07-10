@@ -1,0 +1,215 @@
+
+async function getRandomContent (limit = 10) {
+    const result = await pool.query(
+        `SELECT id, title, songer, audio_file_path, cover_file_path
+         FROM public.content
+         WHERE active = true
+         ORDER BY id
+             LIMIT $1`,
+        [limit]
+    )
+
+    return result.rows.map(mapContentRowToNewsItem)
+}
+
+async function getArtists (limit, offset) {
+    const result = await pool.query(
+        `SELECT songer, cover_file_path, count(id) as content_count
+         FROM public.content
+         WHERE active = true
+         GROUP BY songer, cover_file_path
+         ORDER BY songer
+             LIMIT $1
+         OFFSET $2`,
+        [limit, offset]
+    )
+
+    return result.rows.map(mapArtistsRowToNewsItem)
+}
+
+async function getArtist (songer) {
+    const result = await pool.query(
+        `select id, title, songer, audio_file_path, cover_file_path
+         from public.content
+         where songer = $1
+           and active = true
+         order by id`,
+        [songer]
+    )
+
+    return result.rows.map(mapContentRowToNewsItem)
+}
+
+async function getPlaylists1 (limit = 10) {
+    const result = await pool.query(
+        `SELECT t.id, t.title, t.description, t.cover_path, count(p.id) as content_count
+         FROM public.tops t
+                  left join public.playlist_system p on t.id = p.idtop
+         where t.web_available = true
+         group by t.id, t.title, t.description, t.cover_path
+         ORDER BY random()
+             LIMIT $1`,
+        [limit]
+    )
+
+    return result.rows.map(mapPlaylistRowToNewsItem)
+}
+
+async function getPlaylists (limit = 10) {
+    const result = await pool.query(
+        `WITH ranked_content AS (SELECT t.id,
+                                        t.title,
+                                        t.description,
+                                        c.cover_file_path,
+                                        COUNT(*) OVER(PARTITION BY t.id) as content_count, ROW_NUMBER() OVER(PARTITION BY t.id ORDER BY RANDOM()) as rn
+                                 FROM public.tops t
+                                          LEFT JOIN public.playlist_system p ON t.id = p.idtop
+                                          LEFT JOIN public.content c ON p.idcontent = c.id
+                                 WHERE t.web_available = true)
+         SELECT id,
+                title,
+                description,
+                content_count,
+                JSON_AGG(cover_file_path) AS random_covers
+         FROM ranked_content
+         WHERE rn <= 4
+         GROUP BY id, title, description, content_count
+         ORDER BY id, title, description
+             LIMIT $1`,
+        [limit]
+    )
+
+    return result.rows.map(mapPlaylistWithCoversRowToNewsItem)
+}
+
+async function getPlaylist (id, limit, offset) {
+    const result = await pool.query(
+        `select c.id, c.title, c.songer, c.audio_file_path, c.cover_file_path
+         from public.tops t
+                  left join public.playlist_system p on t.id = p.idtop
+                  left join public.content c on p.idcontent = c.id
+         where t.id = $1
+           and c.active = true
+         order by c.id
+             LIMIT $2
+         OFFSET $3`,
+        [id, limit, offset]
+    )
+
+    return result.rows.map(mapContentRowToNewsItem)
+}
+
+async function getFavorites (msisdn) {
+    const result = await pool.query(
+        `SELECT c.id, c.title, c.songer, c.audio_file_path, c.cover_file_path
+         FROM public.playlist_user p
+                  left join public.content c on p.idcontent = c.id
+         where c.id is not null
+           and c.active = true
+           and p.msisdn = $1
+         order by p.id desc`,
+        [msisdn]
+    )
+
+    return result.rows.map(mapContentRowToNewsItem)
+}
+
+async function getFavoritesIds (msisdn) {
+    const result = await pool.query(
+        `SELECT idcontent
+         FROM public.playlist_user
+         where msisdn = $1
+         order by id desc`,
+        [msisdn]
+    )
+
+    return result.rows
+        .map((row) => row.idcontent)
+        .filter((id) => id != null)
+}
+
+async function addFavorites (msisdn, trackId) {
+    const existing = await pool.query(
+        `select 1
+         from public.playlist_user
+         where msisdn = $1
+           and idcontent = $2 limit 1`,
+        [msisdn, trackId]
+    )
+
+    if (existing.rowCount > 0) {
+        return
+    }
+
+    await pool.query(
+        `insert into public.playlist_user(msisdn, idcontent, channel)
+         values ($1, $2, 3)`,
+        [msisdn, trackId]
+    )
+}
+
+async function removeFavorites (msisdn, trackId) {
+    await pool.query(
+        `delete
+         from public.playlist_user
+         where msisdn = $1
+           and idcontent = $2`,
+        [msisdn, trackId]
+    )
+}
+
+async function searchByTitleOrSinger (find, limit, offset) {
+    const sql = 'select id, title, songer, audio_file_path, cover_file_path from public.content ' +
+        'where active = true and (lower(songer) like \'%' + find + '%\' or lower(title) like \'%' + find + '%\') ' +
+        'order by id limit ' + limit + ' offset ' + offset
+    const result = await pool.query(
+        sql,
+        []
+    )
+
+    return result.rows.map(mapContentRowToNewsItem)
+}
+
+async function categoryList () {
+    const result = await pool.query(
+        `SELECT c.id, c.caption
+         FROM public.category c
+         ORDER BY c.sortby ASC;`)
+
+    return result.rows.map(mapCategoriesRowToItems)
+}
+
+async function categoryInfo (id) {
+    const result = await pool.query(
+        `SELECT cat.caption                                                                               AS category_name,
+                COUNT(DISTINCT CASE WHEN c.idcategory IS NOT NULL THEN (c.songer, c.cover_file_path) END) AS total_rows
+         FROM public.category AS cat
+                  LEFT JOIN public.content AS c
+                            ON cat.id = c.idcategory AND c.active = true
+         WHERE cat.id = $1
+         GROUP BY cat.caption`,
+        [id]
+    )
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return mapCategoryInfoRowToItems(result.rows[0]);
+}
+
+async function getArtistsByCategory (id, limit, offset) {
+    const result = await pool.query(
+        `SELECT c.songer, c.cover_file_path, count(c.id) as content_count
+         FROM public.content c
+         LEFT JOIN public.category g on c.idcategory = g.id
+         WHERE g.id = $1 AND c.active = true
+         GROUP BY c.songer, c.cover_file_path
+         ORDER BY c.songer
+         LIMIT $2
+         OFFSET $3`,
+        [id, limit, offset]
+    )
+
+    return result.rows.map(mapArtistsRowToNewsItem)
+}
