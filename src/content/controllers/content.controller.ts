@@ -6,7 +6,7 @@ import { ArtistItemDto, ContentItemDto } from '../../common/dto/response.dto';
 import { ArtistItem, ContentItem } from '../../common/mappers/content.mapper';
 
 @ApiTags('Content')
-@Controller()
+@Controller('content')
 export class ContentController {
     constructor(private readonly contentService: ContentService) {}
 

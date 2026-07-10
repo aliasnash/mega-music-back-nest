@@ -5,7 +5,7 @@ import { ContentItemDto, PlaylistWithCoversItemDto } from '../../common/dto/resp
 import { ContentItem, PlaylistWithCoversItem } from '../../common/mappers/content.mapper';
 
 @ApiTags('Playlists')
-@Controller()
+@Controller('playlist')
 export class PlaylistController {
     constructor(private readonly playlistService: PlaylistService) {}
 
@@ -27,7 +27,7 @@ export class PlaylistController {
         return await this.playlistService.getPlaylist(8, limit !== undefined ? Number(limit) : undefined, offset !== undefined ? Number(offset) : undefined);
     }
 
-    @Get('playlists')
+    @Get('list')
     @ApiOperation({ summary: 'Список плейлистов', description: 'Возвращает доступные веб-плейлисты со случайными обложками треков.' })
     @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Максимальное количество плейлистов', example: 10 })
     @ApiResponse({ status: 200, description: 'Список плейлистов', type: [PlaylistWithCoversItemDto] })
@@ -35,7 +35,7 @@ export class PlaylistController {
         return await this.playlistService.getPlaylists(limit !== undefined ? Number(limit) : undefined);
     }
 
-    @Get('playlist')
+    @Get('byid')
     @ApiOperation({ summary: 'Треки плейлиста', description: 'Возвращает треки указанного плейлиста с пагинацией.' })
     @ApiQuery({ name: 'id', required: true, type: Number, description: 'Идентификатор плейлиста', example: 1 })
     @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Максимальное количество треков', example: 10 })
